@@ -1,9 +1,9 @@
-use std::io::{self, BufRead};
+use std::io::BufRead;
 
 use crate::board::Board;
 use crate::piece::Piece;
 
-use crate::data_input_verification::{verify_board_header, verify_piece_header};
+use crate::data_input_verification::{verify_board_header, verify_dimensions, verify_piece_header};
 
 #[cfg(test)]
 #[path = "test.rs"]
@@ -63,6 +63,10 @@ pub fn read_board<R: BufRead>(reader: &mut R) -> Option<Board> {
     let width = parts[1].parse::<usize>().ok()?;
     let height = parts[2].trim_end_matches(':').parse::<usize>().ok()?;
 
+    if !verify_dimensions(width, height) {
+        return None;
+    }
+
     let mut board = Board::new(width, height);
 
     line.clear();
@@ -102,6 +106,10 @@ pub fn read_piece<R: BufRead>(reader: &mut R) -> Option<Piece> {
 
     let width = parts[1].parse::<usize>().ok()?;
     let height = parts[2].trim_end_matches(':').parse::<usize>().ok()?;
+
+    if !verify_dimensions(width, height) {
+        return None;
+    }
 
     let mut piece = Piece::new(width, height);
 

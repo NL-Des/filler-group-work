@@ -54,7 +54,7 @@ Anfield 5 3:
     assert_eq!(board.get(4, 0), '.');
 
     assert_eq!(board.get(2, 1), '@');
-    assert_eq!(board.get(3, 2), '$');
+    assert_eq!(board.get(1, 2), '$');
 }
 
 #[test]
