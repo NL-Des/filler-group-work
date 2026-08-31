@@ -5,6 +5,10 @@ use crate::piece::Piece;
 
 use crate::data_input_verification::{verify_board_header, verify_piece_header};
 
+#[cfg(test)]
+#[path = "test.rs"]
+mod test;
+
 #[derive(Debug, Clone)]
 pub struct Player {
     pub me: char,
