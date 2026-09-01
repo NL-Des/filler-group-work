@@ -1,154 +1,253 @@
-use std::io::Cursor;
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
 
-use crate::data_read_and_simplify::{parse_player, read_board, read_piece};
+    use super::super::{parse_player, read_board, read_piece};
 
-#[test]
-fn test_parse_player_p1() {
-    let player = parse_player("p1").expect("p1 should be valid");
+    // ============================================================
+    // Tests de parse_player()
+    // ============================================================
 
-    assert_eq!(player.me, '@');
-    assert_eq!(player.me_last, 'a');
-    assert_eq!(player.enemy, '$');
-    assert_eq!(player.enemy_last, 's');
-}
+    #[test]
+    fn test_parse_player_p1() {
+        let player = parse_player("$$$ exec p1 : [robots/bender]");
 
-#[test]
-fn test_parse_player_p2() {
-    let player = parse_player("p2").expect("p2 should be valid");
+        assert!(player.is_some());
 
-    assert_eq!(player.me, '$');
-    assert_eq!(player.me_last, 's');
-    assert_eq!(player.enemy, '@');
-    assert_eq!(player.enemy_last, 'a');
-}
+        let player = player.unwrap();
 
-#[test]
-fn test_parse_player_invalid() {
-    let player = parse_player("invalid");
+        assert_eq!(player.me, '@');
+        assert_eq!(player.me_last, 'a');
+        assert_eq!(player.enemy, '$');
+        assert_eq!(player.enemy_last, 's');
+    }
 
-    assert!(player.is_none());
-}
+    #[test]
+    fn test_parse_player_p2() {
+        let player = parse_player("$$$ exec p2 : [robots/bender]");
 
-#[test]
-fn test_read_board() {
-    let input = "\
-something before
-Anfield 5 3:
+        assert!(player.is_some());
+
+        let player = player.unwrap();
+
+        assert_eq!(player.me, '$');
+        assert_eq!(player.me_last, 's');
+        assert_eq!(player.enemy, '@');
+        assert_eq!(player.enemy_last, 'a');
+    }
+
+    #[test]
+    fn test_parse_player_invalid() {
+        assert!(parse_player("$$$ exec p3 : [robots/bender]").is_none());
+        assert!(parse_player("hello").is_none());
+        assert!(parse_player("").is_none());
+    }
+
+    // ============================================================
+    // Tests de read_board()
+    // ============================================================
+
+    #[test]
+    fn test_read_board_valid() {
+        let input = "\
+Anfield 5 4:
     01234
-0000.....
-0001..@..
-0002.$...
+000 .....
+001 ..@..
+002 .....
+003 .....
 ";
 
-    let mut reader = Cursor::new(input);
+        let mut reader = Cursor::new(input.as_bytes());
 
-    let board = read_board(&mut reader).expect("The board should be successfully read");
+        let board = read_board(&mut reader);
 
-    assert_eq!(board.width, 5);
-    assert_eq!(board.height, 3);
+        assert!(board.is_some());
 
-    assert_eq!(board.get(0, 0), '.');
-    assert_eq!(board.get(1, 0), '.');
-    assert_eq!(board.get(2, 0), '.');
-    assert_eq!(board.get(3, 0), '.');
-    assert_eq!(board.get(4, 0), '.');
+        let board = board.unwrap();
 
-    assert_eq!(board.get(2, 1), '@');
-    assert_eq!(board.get(1, 2), '$');
-}
+        // Vérification des dimensions.
+        assert_eq!(board.width, 5);
+        assert_eq!(board.height, 4);
 
-#[test]
-fn test_read_board_no_header() {
-    let input = "\
-something
-another line
+        // Vérification des cellules.
+        assert_eq!(board.get(0, 0), '.');
+        assert_eq!(board.get(1, 0), '.');
+        assert_eq!(board.get(2, 1), '@');
+        assert_eq!(board.get(4, 3), '.');
+    }
+
+    #[test]
+    fn test_read_board_with_player_positions() {
+        let input = "\
+Anfield 6 4:
+    012345
+000 ......
+001 ..@...
+002 ...$..
+003 ......
 ";
 
-    let mut reader = Cursor::new(input);
+        let mut reader = Cursor::new(input.as_bytes());
 
-    let board = read_board(&mut reader);
+        let board = read_board(&mut reader);
 
-    assert!(board.is_none());
-}
+        assert!(board.is_some());
 
-#[test]
-fn test_read_board_invalid_dimensions() {
-    let input = "\
-Anfield abc 3:
+        let board = board.unwrap();
+
+        assert_eq!(board.get(2, 1), '@');
+        assert_eq!(board.get(3, 2), '$');
+    }
+
+    #[test]
+    fn test_read_board_invalid_header() {
+        let input = "\
+Wrong 5 4:
     01234
-0000.....
-0001.....
-0002.....
+000 .....
+001 .....
+002 .....
+003 .....
 ";
 
-    let mut reader = Cursor::new(input);
+        let mut reader = Cursor::new(input.as_bytes());
 
-    let board = read_board(&mut reader);
+        assert!(read_board(&mut reader).is_none());
+    }
 
-    assert!(board.is_none());
-}
-
-#[test]
-fn test_read_piece() {
-    let input = "\
-Piece 3 2:
-***
-.*.
+    #[test]
+    fn test_read_board_missing_rows() {
+        let input = "\
+Anfield 5 4:
+    01234
+000 .....
+001 .....
 ";
 
-    let mut reader = Cursor::new(input);
+        let mut reader = Cursor::new(input.as_bytes());
 
-    let piece = read_piece(&mut reader).expect("The piece should be successfully read");
+        assert!(read_board(&mut reader).is_none());
+    }
 
-    assert_eq!(piece.width, 3);
-    assert_eq!(piece.height, 2);
-
-    assert_eq!(piece.get(0, 0), '*');
-    assert_eq!(piece.get(1, 0), '*');
-    assert_eq!(piece.get(2, 0), '*');
-
-    assert_eq!(piece.get(0, 1), '.');
-    assert_eq!(piece.get(1, 1), '*');
-    assert_eq!(piece.get(2, 1), '.');
-}
-
-#[test]
-fn test_read_piece_invalid_header() {
-    let input = "\
-Something 3 2:
-***
-.*.
+    #[test]
+    fn test_read_board_invalid_dimensions() {
+        let input = "\
+Anfield 0 4:
+    0123
+000 ....
+001 ....
+002 ....
+003 ....
 ";
 
-    let mut reader = Cursor::new(input);
+        let mut reader = Cursor::new(input.as_bytes());
 
-    let piece = read_piece(&mut reader);
+        assert!(read_board(&mut reader).is_none());
+    }
 
-    assert!(piece.is_none());
-}
+    // ============================================================
+    // Tests de read_piece()
+    // ============================================================
 
-#[test]
-fn test_read_piece_invalid_dimensions() {
-    let input = "\
-Piece abc 2:
-***
-.*.
+    #[test]
+    fn test_read_piece_valid() {
+        let input = "\
+Piece 4 2:
+.##.
+.##.
 ";
 
-    let mut reader = Cursor::new(input);
+        let mut reader = Cursor::new(input.as_bytes());
 
-    let piece = read_piece(&mut reader);
+        let piece = read_piece(&mut reader);
 
-    assert!(piece.is_none());
-}
+        assert!(piece.is_some());
 
-#[test]
-fn test_read_piece_empty_input() {
-    let input = "";
+        let piece = piece.unwrap();
 
-    let mut reader = Cursor::new(input);
+        // Vérification des dimensions.
+        assert_eq!(piece.width, 4);
+        assert_eq!(piece.height, 2);
 
-    let piece = read_piece(&mut reader);
+        // Vérification du contenu.
+        assert_eq!(piece.get(0, 0), '.');
+        assert_eq!(piece.get(1, 0), '#');
+        assert_eq!(piece.get(2, 0), '#');
+        assert_eq!(piece.get(3, 0), '.');
 
-    assert!(piece.is_none());
+        assert_eq!(piece.get(0, 1), '.');
+        assert_eq!(piece.get(1, 1), '#');
+        assert_eq!(piece.get(2, 1), '#');
+        assert_eq!(piece.get(3, 1), '.');
+    }
+
+    #[test]
+    fn test_read_piece_different_shape() {
+        let input = "\
+Piece 5 4:
+.##..
+.##..
+..#..
+...#.
+";
+
+        let mut reader = Cursor::new(input.as_bytes());
+
+        let piece = read_piece(&mut reader);
+
+        assert!(piece.is_some());
+
+        let piece = piece.unwrap();
+
+        assert_eq!(piece.width, 5);
+        assert_eq!(piece.height, 4);
+
+        assert_eq!(piece.get(1, 0), '#');
+        assert_eq!(piece.get(2, 0), '#');
+
+        assert_eq!(piece.get(1, 1), '#');
+        assert_eq!(piece.get(2, 1), '#');
+
+        assert_eq!(piece.get(2, 2), '#');
+        assert_eq!(piece.get(3, 3), '#');
+    }
+
+    #[test]
+    fn test_read_piece_invalid_header() {
+        let input = "\
+Wrong 4 2:
+.##.
+.##.
+";
+
+        let mut reader = Cursor::new(input.as_bytes());
+
+        assert!(read_piece(&mut reader).is_none());
+    }
+
+    #[test]
+    fn test_read_piece_missing_rows() {
+        let input = "\
+Piece 4 2:
+.##.
+";
+
+        let mut reader = Cursor::new(input.as_bytes());
+
+        assert!(read_piece(&mut reader).is_none());
+    }
+
+    #[test]
+    fn test_read_piece_invalid_dimensions() {
+        let input = "\
+Piece 0 2:
+..
+..
+";
+
+        let mut reader = Cursor::new(input.as_bytes());
+
+        assert!(read_piece(&mut reader).is_none());
+    }
 }
