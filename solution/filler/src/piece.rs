@@ -1,7 +1,7 @@
 pub struct Piece {
     pub width: usize,
     pub height: usize,
-    cells: Vec<char>,
+    pub cells: Vec<char>,
 }
 
 impl Piece {
