@@ -237,7 +237,7 @@ pub fn read_piece<R: BufRead>(reader: &mut R) -> Option<Piece> {
     // ---------------------------------------------------------
     // Lecture du header
     // ---------------------------------------------------------
-    //
+    //./linux_game_engine -f maps/map01 -p1 linux_robots/bender -p2 linux_robots/terminator
     // Exemple :
     //
     //     Piece 4 1:

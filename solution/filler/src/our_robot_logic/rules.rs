@@ -12,16 +12,37 @@
 // Données de sortie :
 // - Coordonnées de la pièce à placer sur le plateau de jeu. (coordonnées X Y\n du coin supérieur gauche de la boîte de la pièce.)
 
-use crate::{board::Board, data_read_and_simplify::Player, piece::Piece};
+use crate::{board::Board, data_read_and_simplify::Player, piece::{self, Piece}};
 
-pub fn read_data_game(player: Player, board: Board, piece: Piece) {
-    // let table_board = board.cells();
-
+pub fn read_data_game(board: Board, piece: Piece) {
     // reçoit les dimensions du plateau de jeu (Anfield).
     // reçoit les dimensions de la pièce à placer.
-    // faire un tableau en deux dimensions pour le plateau de jeu (Anfield).
-    // faire un tableau en deux dimensionspour la pièce à placer.
-    // faire une boucle qui lit les lignes du plateau de jeu et les stocke dans le tableau du plateau.
+    let table_height = board.height;
+    let table_width = board.width;
+    let table_board = board.cells;
+    let piece_height = piece.height;
+    let piece_width = piece.width;
+    let piece_cells = piece.cells;
+
+    // Un tableau en deux dimensions pour le plateau de jeu (Anfield).
+    // Un tableau en deux dimensionspour la pièce à placer.
+    let mut board_2d: Vec<Vec<char>> = vec![vec!['.'; table_width]; table_height];
+    let mut piece_2d: Vec<Vec<char>> = vec![vec!['.'; piece_width]; piece_height];
+
+    // Une boucle qui lit les lignes du plateau de jeu et les stocke dans le tableau du plateau.
+    for i in 0..table_height {
+        for j in 0..table_width {
+            board_2d[i][j] = table_board[i * table_width + j];
+        }
+    }
+
+    // Une boucle qui lit les lignes de la pièce et les stocke dans le tableau de la pièce.
+    for i in 0..piece_height {
+        for j in 0..piece_width {
+            piece_2d[i][j] = piece_cells[i * piece_width + j];
+        }
+    }
+
     // faire une boucle qui lit chaque case et détecte si :
     // Elle est vide.
     // Si elle est occupée par le joueur 1.
