@@ -42,6 +42,7 @@ fn main() {
     let stdin = io::stdin();
     let mut reader = stdin.lock();
 
+    // Lecture du plateau et validation.
     let board = read_board(&mut reader);
     if board.is_none() {
         println!("Invalid board input: {}", input);
@@ -49,6 +50,7 @@ fn main() {
     }
     let board = board.unwrap();
 
+    // Lecture de la pièce et validation.
     let piece = read_piece(&mut reader);
     if piece.is_none() {
         println!("Invalid piece input: {}", input);
@@ -56,7 +58,10 @@ fn main() {
     }
     let piece = piece.unwrap();
 
+    // Lecture des données et mise en 2D du tableau de jeu et de la pièce.
     let (board_2d, piece_2d) = our_robot_logic::rules::read_data_game(board, piece);
+    
+    // Lancement de la stratégie du robot pour déterminer le meilleur placement de la pièce.
     let result = our_robot_logic::strategy::read_game(board_2d, piece_2d, player);
 
     match result {
