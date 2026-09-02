@@ -56,6 +56,11 @@ fn main() {
     }
     let piece = piece.unwrap();
 
-    // TODO: brancher our_robot_logic / actions_to_place_pieces / send_answer.
-    let _ = (player, board, piece);
+    let (board_2d, piece_2d) = our_robot_logic::rules::read_data_game(board, piece);
+    let result = our_robot_logic::strategy::read_game(board_2d, piece_2d, player);
+
+    match result {
+        Some((x, y)) => send_answer::print_placement(x, y),
+        None => println!("No valid placement found."),
+    }
 }
