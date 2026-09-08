@@ -2,7 +2,7 @@ use std::io;
 use std::io::BufRead;
 
 use crate::data_input_verification::verify_player_input;
-    use crate::data_read_and_simplify::parse_player;
+use crate::data_read_and_simplify::parse_player;
 use crate::data_read_and_simplify::read_board;
 use crate::data_read_and_simplify::read_piece;
 
@@ -43,10 +43,8 @@ fn main() {
         None => return,
     };
 
-    // On continue de lire le même flux stdin là où read_input() s'est arrêté,
-    // pour ne pas perdre les lignes du plateau et de la pièce.
-
-    // Lecture du plateau et validation.
+    //boucle de jeu
+    // Lecture du plateau, validation et placement des piece sur le board
     loop {
         let board = match read_board(&mut reader) {
             Some(board) => board,
@@ -70,7 +68,7 @@ fn main() {
             Some((x, y)) => send_answer::print_placement(x, y),
             // OLD -- None => println!("No valid placement found."),
             // le sujet attend un une sortie au format (x, y)
-             None => send_answer::print_placement(0,0),
+            None => send_answer::print_placement(0, 0),
         }
     }
 }
