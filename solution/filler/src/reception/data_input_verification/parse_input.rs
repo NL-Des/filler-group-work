@@ -14,7 +14,7 @@ pub fn read_input() -> String {
     // Création d'un lock sur stdin.
     //
     // Le lock permet de lire proprement depuis l'entrée standard.
-    let mut reader = stdin.lock();
+    let mut reader: io::StdinLock<'_> = stdin.lock();
 
     // String qui recevra la ligne.
     let mut input = String::new();
