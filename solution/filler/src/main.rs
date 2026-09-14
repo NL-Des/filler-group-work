@@ -43,6 +43,8 @@ fn main() {
         None => return,
     };
 
+    let mut turn = 1;
+
     //boucle de jeu
     // Lecture du plateau, validation et placement des piece sur le board
     loop {
@@ -57,6 +59,10 @@ fn main() {
             None => break,
         };
 
+        if visualisation::is_enabled() {
+            visualisation::display_turn(&board, &piece, &player, turn);
+        }
+
         // Lecture des données et mise en 2D du tableau de jeu et de la pièce.
         let (board_2d, piece_2d) = our_robot_logic::rules::read_data_game(board, piece);
 
@@ -70,5 +76,7 @@ fn main() {
             // le sujet attend un une sortie au format (x, y)
             None => send_answer::print_placement(0, 0),
         }
+
+        turn += 1;
     }
 }

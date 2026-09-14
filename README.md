@@ -16,3 +16,9 @@
   
 ## Tests
 Pour lancer les tests unitaires et vérifier la fonctionnalité du programme : `cargo test`
+
+## Visualiseur terminal
+
+Le visualiseur n'altère pas les coordonnées envoyées au moteur : dans un conteneur interactif, il s'affiche directement sur le terminal. Active-le lors du lancement du moteur :
+
+`FILLER_VISUALIZE=1 ./linux_game_engine -q -f maps/map01 -p1 /filler/solution/filler/target/debug/filler -p2 linux_robots/bender`
