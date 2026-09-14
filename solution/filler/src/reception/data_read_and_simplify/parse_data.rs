@@ -197,27 +197,19 @@ pub fn read_board<R: BufRead>(reader: &mut R) -> Option<Board> {
             return None;
         }
 
-        // Suppression du retour à la ligne.
-        let chars: Vec<char> = line.trim().chars().collect();
+        let mut parts = line.split_whitespace();
+        let _row_index = parts.next()?;
+        let cells: Vec<char> = parts.next()?.chars().collect();
 
-        // Une ligne doit contenir :
-        //
-        // 3 caractères de numéro
-        // + 1 espace
-        // + width caractères de terrain
-        //
-        // Donc au minimum width + 4 caractères.
-        if chars.len() < width + 4 {
+        // Une ligne contient exactement un index et `width` cellules.
+        if cells.len() != width || parts.next().is_some() {
             return None;
         }
 
-        // Copie des caractères de terrain dans le Board.
-        //
-        // chars[0..3] = numéro de ligne
-        // chars[3]    = espace
-        // chars[4..]  = terrain
-        for x in 0..width {
-            board.set(x, y, chars[x + 4]);
+        // L'index peut avoir plus de trois chiffres : il est séparé des
+        // cellules par les espaces plutôt que par une position fixe.
+        for (x, cell) in cells.into_iter().enumerate() {
+            board.set(x, y, cell);
         }
     }
 

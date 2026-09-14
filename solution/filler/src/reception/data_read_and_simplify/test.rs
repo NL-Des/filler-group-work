@@ -101,6 +101,24 @@ Anfield 6 4:
     }
 
     #[test]
+    fn test_read_board_with_four_digit_row_index() {
+        let input = "\
+Anfield 3 1:
+   012
+1000 .@.
+";
+
+        let mut reader = Cursor::new(input.as_bytes());
+        let board = read_board(&mut reader).expect("the board should be parsed");
+
+        assert_eq!(board.width, 3);
+        assert_eq!(board.height, 1);
+        assert_eq!(board.get(0, 0), '.');
+        assert_eq!(board.get(1, 0), '@');
+        assert_eq!(board.get(2, 0), '.');
+    }
+
+    #[test]
     fn test_read_board_invalid_header() {
         let input = "\
 Wrong 5 4:
