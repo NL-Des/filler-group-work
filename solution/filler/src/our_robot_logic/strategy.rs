@@ -1,5 +1,4 @@
 use std::collections::{HashSet, VecDeque};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::data_read_and_simplify::Player;
 use crate::our_robot_logic::rules;
@@ -33,9 +32,11 @@ pub fn read_game(
     let (w_expansion, w_aggression, w_race, w_fragmentation) = phase_weights(&board_2d);
 
     let mut best_score = f64::MIN;
-    let mut best_candidates: Vec<(usize, usize)> = Vec::new();
+    let mut best_candidate = None;
+    let mut best_enemy_heat = i32::MAX;
 
     for &(x, y) in &candidates {
+        let enemy_heat = enemy_heat(&footprint, (x, y), &dist_from_enemy);
         let score = score_placement(
             &board_2d,
             &footprint,
@@ -50,17 +51,14 @@ pub fn read_game(
             w_fragmentation,
         );
 
-        if score > best_score {
+        if enemy_heat < best_enemy_heat || (enemy_heat == best_enemy_heat && score > best_score) {
+            best_enemy_heat = enemy_heat;
             best_score = score;
-            best_candidates.clear();
-            best_candidates.push((x, y));
-        } else if score == best_score {
-            best_candidates.push((x, y));
+            best_candidate = Some((x, y));
         }
     }
 
-    let pick = pseudo_random_index(best_candidates.len());
-    best_candidates.get(pick).copied()
+    best_candidate
 }
 
 /// Détermine les poids des critères selon le taux de remplissage du plateau :
@@ -154,6 +152,16 @@ fn score_placement(
         - w_fragmentation * fragmentation_penalty
 }
 
+fn enemy_heat(
+    footprint: &[(usize, usize)],
+    top_left: (usize, usize),
+    dist_from_enemy: &[Vec<i32>],
+) -> i32 {
+    footprint.iter().fold(0, |heat, &(dx, dy)| {
+        heat.saturating_add(dist_from_enemy[top_left.1 + dy][top_left.0 + dx])
+    })
+}
+
 /// BFS borné qui compte l'espace vide accessible autour d'un placement, pour
 /// détecter les coups qui s'enfermeraient dans une poche fermée.
 fn local_open_space(
@@ -237,25 +245,4 @@ fn flood_fill_distances(board_2d: &[Vec<char>], is_source: impl Fn(char) -> bool
     }
 
     distances
-}
-
-/// Petit générateur pseudo-aléatoire (xorshift) pour départager les coups
-/// à égalité de score, sans dépendance externe.
-fn pseudo_random_index(len: usize) -> usize {
-    if len <= 1 {
-        return 0;
-    }
-
-    let seed = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos() as u64)
-        .unwrap_or(0)
-        | 1;
-
-    let mut state = seed;
-    state ^= state << 13;
-    state ^= state >> 7;
-    state ^= state << 17;
-
-    (state % len as u64) as usize
 }

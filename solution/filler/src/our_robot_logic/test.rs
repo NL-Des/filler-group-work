@@ -1,4 +1,6 @@
 use super::rules::{apply_rules_to_place_piece, if_placement_valid};
+use super::strategy::read_game;
+use crate::data_read_and_simplify::Player;
 
 const ME: char = '@';
 const ME_LAST: char = 'a';
@@ -101,4 +103,18 @@ fn apply_rules_returns_empty_when_no_ally_cell_present() {
         apply_rules_to_place_piece(&board, &piece, ME, ME_LAST, ENEMY, ENEMY_LAST);
 
     assert!(placements.is_empty());
+}
+
+#[test]
+fn strategy_approaches_enemy_instead_of_only_maximizing_local_space() {
+    let board = vec![vec!['.', '.', '.', '.', '@', '.', '$', '.', '.']];
+    let piece = vec![vec!['O', 'O']];
+    let player = Player {
+        me: ME,
+        me_last: ME_LAST,
+        enemy: ENEMY,
+        enemy_last: ENEMY_LAST,
+    };
+
+    assert_eq!(read_game(board, piece, player), Some((4, 0)));
 }
