@@ -1,24 +1,67 @@
-# Filler docker image
+# Filler
 
-- To build the image `docker build -t filler .`
-- To run the container `docker run -v "$(pwd)/solution":/filler/solution -it filler`. This instruction will open a terminal in the container, the directory `solution` will be mounted in the container as well.
-- Example of a command in the container `./linux_game_engine -f maps/map01 -p1 linux_robots/bender -p2 linux_robots/terminator`
-- Your solution should be inside the `solution` directory so it will be mounted and compiled inside the container and it will be able to be run in the game engine.
+## Lancer le projet
 
-## Notes
+Depuis la racine du dépôt, construire l'image puis ouvrir un terminal dans le conteneur :
 
-- `Terminator` is a very strong robot so it's optional to beat him.
-- For M1 Macs use `m1_robots` and `m1_game_engine`.
+```bash
+docker build -t filler .
+docker run --rm -it -v "$(pwd)/solution":/filler/solution filler
+```
 
-## Commande de lancement de deux robots :
-`docker run -v "$(pwd)/solution":/filler/solution -it filler`
-`./linux_game_engine -f maps/map01 -p1 linux_robots/bender -p2 linux_robots/terminator`
-  
-## Tests
-Pour lancer les tests unitaires et vérifier la fonctionnalité du programme : `cargo test`
+Dans le conteneur, compiler le robot :
+
+```bash
+cd /filler/solution/filler
+cargo build
+```
+
+Le binaire est alors disponible à `/filler/solution/filler/target/debug/filler`.
+
+## Jouer une partie
+
+Depuis le conteneur, après la compilation :
+
+```bash
+cd /filler
+./linux_game_engine -q -f maps/map01 \
+  -p1 /filler/solution/filler/target/debug/filler \
+  -p2 linux_robots/bender
+```
+
+L'option `-q` masque les échanges bruts entre le moteur et les robots. Retirez-la pour les afficher.
+
+### Jouer contre Terminator
+
+Le bonus Terminator utilise le même binaire : aucune option particulière n'est à injecter. Le robot a été validé en joueur 1 avec cette commande reproductible :
+
+```bash
+cd /filler
+./linux_game_engine -q -s 42 -f maps/map01 \
+  -p1 /filler/solution/filler/target/debug/filler \
+  -p2 linux_robots/terminator
+```
+
+`-s 42` fixe la seed du match.
 
 ## Visualiseur terminal
 
-Le visualiseur n'altère pas les coordonnées envoyées au moteur : dans un conteneur interactif, il s'affiche directement sur le terminal. Active-le lors du lancement du moteur :
+Activez le visualiseur avec `FILLER_VISUALIZE=1`. Conservez `-q`, sinon le moteur affiche aussi le plateau et l'affichage apparaît en double.
 
-`FILLER_VISUALIZE=1 ./linux_game_engine -q -f maps/map01 -p1 /filler/solution/filler/target/debug/filler -p2 linux_robots/bender`
+```bash
+cd /filler
+FILLER_VISUALIZE=1 ./linux_game_engine -q -f maps/map01 \
+  -p1 /filler/solution/filler/target/debug/filler \
+  -p2 linux_robots/bender
+```
+
+## Tests
+
+Dans le conteneur :
+
+```bash
+cd /filler/solution/filler
+cargo test
+```
+
+Sur Mac Apple Silicon, remplacez `linux_game_engine` et `linux_robots` par `m1_game_engine` et `m1_robots`.
