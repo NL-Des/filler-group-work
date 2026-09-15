@@ -1,5 +1,5 @@
 use super::rules::{apply_rules_to_place_piece, if_placement_valid};
-use super::strategy::read_game;
+use super::strategy::{read_game, strategy_profile};
 use crate::data_read_and_simplify::Player;
 
 const ME: char = '@';
@@ -106,7 +106,7 @@ fn apply_rules_returns_empty_when_no_ally_cell_present() {
 }
 
 #[test]
-fn strategy_approaches_enemy_instead_of_only_maximizing_local_space() {
+fn strategy_uses_player_specific_aggression_weight() {
     let board = vec![vec!['.', '.', '.', '.', '@', '.', '$', '.', '.']];
     let piece = vec![vec!['O', 'O']];
     let player = Player {
@@ -117,4 +117,30 @@ fn strategy_approaches_enemy_instead_of_only_maximizing_local_space() {
     };
 
     assert_eq!(read_game(board, piece, player), Some((4, 0)));
+}
+
+#[test]
+fn strategy_applies_player_two_pressure() {
+    let board = vec![vec!['.', '.', '.', '.', '$', '.', '@', '.', '.']];
+    let piece = vec![vec!['O', 'O']];
+    let player = Player {
+        me: '$',
+        me_last: 's',
+        enemy: '@',
+        enemy_last: 'a',
+    };
+
+    assert_eq!(read_game(board, piece, player), Some((4, 0)));
+}
+
+#[test]
+fn strategy_profiles_are_asymmetric() {
+    let board = vec![vec!['.', '.', '@', '.', '$', '.', '.', '.']];
+    let piece = vec![vec!['O', 'O']];
+
+    let p1 = strategy_profile(ME, &board, &piece, 2);
+    let p2 = strategy_profile(ENEMY, &board, &piece, 2);
+
+    assert!(p2.w_fragmentation > p1.w_fragmentation);
+    assert!(p2.enemy_heat_weight > p1.enemy_heat_weight);
 }

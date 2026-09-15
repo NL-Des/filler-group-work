@@ -29,11 +29,10 @@ pub fn read_game(
     let dist_from_me = flood_fill_distances(&board_2d, |c| c == me || c == me_last);
     let dist_from_enemy = flood_fill_distances(&board_2d, |c| c == enemy || c == enemy_last);
 
-    let (w_expansion, w_aggression, w_race, w_fragmentation) = phase_weights(&board_2d);
+    let profile = strategy_profile(me, &board_2d, &piece_2d, footprint.len());
 
     let mut best_score = f64::MIN;
     let mut best_candidate = None;
-    let mut best_enemy_heat = i32::MAX;
 
     for &(x, y) in &candidates {
         let enemy_heat = enemy_heat(&footprint, (x, y), &dist_from_enemy);
@@ -45,20 +44,102 @@ pub fn read_game(
             enemy_last,
             &dist_from_me,
             &dist_from_enemy,
-            w_expansion,
-            w_aggression,
-            w_race,
-            w_fragmentation,
+            profile.w_expansion,
+            profile.w_aggression,
+            profile.w_race,
+            profile.w_fragmentation,
         );
+        let combined_score = score - profile.enemy_heat_weight * enemy_heat as f64;
 
-        if enemy_heat < best_enemy_heat || (enemy_heat == best_enemy_heat && score > best_score) {
-            best_enemy_heat = enemy_heat;
-            best_score = score;
+        if combined_score > best_score {
+            best_score = combined_score;
             best_candidate = Some((x, y));
         }
     }
 
     best_candidate
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct StrategyProfile {
+    w_expansion: f64,
+    w_aggression: f64,
+    w_race: f64,
+    pub(crate) w_fragmentation: f64,
+    pub(crate) enemy_heat_weight: f64,
+}
+
+pub(crate) fn strategy_profile(
+    me: char,
+    board_2d: &[Vec<char>],
+    piece_2d: &[Vec<char>],
+    footprint_len: usize,
+) -> StrategyProfile {
+    if me == '@' {
+        player_one_strategy(board_2d, piece_2d, footprint_len)
+    } else {
+        player_two_strategy(board_2d, piece_2d, footprint_len)
+    }
+}
+
+/// P1 joue l'initiative : il conserve une chaleur ennemie plus faible pour
+/// garder plusieurs options d'ouverture et préserver sa mobilité.
+fn player_one_strategy(
+    board_2d: &[Vec<char>],
+    piece_2d: &[Vec<char>],
+    footprint_len: usize,
+) -> StrategyProfile {
+    let (w_expansion, w_aggression, w_race, w_fragmentation) = phase_weights(board_2d);
+    StrategyProfile {
+        w_expansion,
+        w_aggression,
+        w_race,
+        w_fragmentation,
+        enemy_heat_weight: opening_heat_weight(board_2d, piece_2d, footprint_len, 1.0),
+    }
+}
+
+/// P2 joue en réaction : il valorise davantage le contact et évite les coups
+/// qui lui laisseraient une poche de jeu trop facile à couper.
+fn player_two_strategy(
+    board_2d: &[Vec<char>],
+    piece_2d: &[Vec<char>],
+    footprint_len: usize,
+) -> StrategyProfile {
+    let (w_expansion, w_aggression, w_race, w_fragmentation) = phase_weights(board_2d);
+    StrategyProfile {
+        w_expansion,
+        w_aggression,
+        w_race,
+        w_fragmentation: w_fragmentation + 0.25,
+        enemy_heat_weight: opening_heat_weight(board_2d, piece_2d, footprint_len, 2.0),
+    }
+}
+
+fn opening_heat_weight(
+    board_2d: &[Vec<char>],
+    piece_2d: &[Vec<char>],
+    footprint_len: usize,
+    base_weight: f64,
+) -> f64 {
+    let filled_cells = board_2d
+        .iter()
+        .flat_map(|row| row.iter())
+        .filter(|&&cell| cell != '.')
+        .count();
+    if filled_cells > 2 || piece_2d.is_empty() || piece_2d[0].is_empty() {
+        return base_weight;
+    }
+
+    let bounding_area = piece_2d.len() * piece_2d[0].len();
+    let density = footprint_len as f64 / bounding_area as f64;
+    if footprint_len <= 3 {
+        base_weight * 1.5
+    } else if density < 0.5 {
+        base_weight * 0.75
+    } else {
+        base_weight
+    }
 }
 
 /// Détermine les poids des critères selon le taux de remplissage du plateau :
